@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chương trình Mã hóa DES(python) - Nhóm 5</title>
+    
+    <!-- Thư viện giao diện (Tailwind CSS) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Icon (FontAwesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Hiệu ứng chuyển động nhẹ */
+        .btn-hover { transition: transform 0.1s ease-in-out; }
+        .btn-hover:active { transform: scale(0.95); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col">
+
+    <!-- HEADER -->
+    <header class="bg-blue-900 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-shield-alt text-3xl text-yellow-400"></i>
+                <div>
+                    <h1 class="text-xl font-bold uppercase tracking-wider">Chương trình Mã hóa DES</h1>
+                    <p class="text-xs text-blue-200">Bài tập lớn ATBMTT - Nhóm 5</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-sm opacity-80">
+                Phiên bản Web (HTML5/JS)
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="container mx-auto px-4 py-6 flex-grow">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- CỘT TRÁI: CẤU HÌNH & INPUT -->
+            <div class="lg:col-span-5 space-y-5">
+                
+                <!-- 1. Chọn Chế độ -->
+                <div class="bg-white rounded-lg shadow-md p-5 border-t-4 border-blue-500">
+                    <h2 class="text-gray-700 font-bold mb-3 flex items-center">
+                        <i class="fas fa-cogs mr-2 text-blue-500"></i> 1. Chế độ thuật toán
+                    </h2>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="cursor-pointer border rounded-md p-2 flex flex-col items-center hover:bg-blue-50 transition has-[:checked]:bg-blue-100 has-[:checked]:border-blue-500">
+                            <input type="radio" name="mode" value="Single" checked class="mb-1 accent-blue-600" onchange="updateKeyRequirement()">
+                            <span class="text-sm font-semibold">Single DES</span>
+                            <span class="text-xs text-gray-500">8 Bytes</span>
+                        </label>
+                        <label class="cursor-pointer border rounded-md p-2 flex flex-col items-center hover:bg-blue-50 transition has-[:checked]:bg-blue-100 has-[:checked]:border-blue-500">
+                            <input type="radio" name="mode" value="Double" class="mb-1 accent-blue-600" onchange="updateKeyRequirement()">
+                            <span class="text-sm font-semibold">Double DES</span>
+                            <span class="text-xs text-gray-500">16 Bytes</span>
+                        </label>
+                        <label class="cursor-pointer border rounded-md p-2 flex flex-col items-center hover:bg-blue-50 transition has-[:checked]:bg-blue-100 has-[:checked]:border-blue-500">
+                            <input type="radio" name="mode" value="Triple" class="mb-1 accent-blue-600" onchange="updateKeyRequirement()">
+                            <span class="text-sm font-semibold">Triple DES</span>
+                            <span class="text-xs text-gray-500">24 Bytes</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 2. Quản lý Khóa -->
+                <div class="bg-white rounded-lg shadow-md p-5 border-t-4 border-yellow-500">
+                    <h2 class="text-gray-700 font-bold mb-3 flex items-center">
+                        <i class="fas fa-key mr-2 text-yellow-500"></i> 2. Khóa Bí Mật (Hex)
+                    </h2>
+                    <div class="flex space-x-2">
+                        <input type="text" id="keyInput" placeholder="Ví dụ: 0123456789ABCDEF" 
+                            class="flex-1 border border-gray-300 rounded px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 uppercase">
+                        <button onclick="generateKey()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded shadow btn-hover" title="Sinh khóa ngẫu nhiên">
+                            <i class="fas fa-dice"></i>
+                        </button>
+                        <button onclick="saveKeyToFile()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded shadow btn-hover" title="Lưu khóa ra file">
+                            <i class="fas fa-save"></i>
+                        </button>
+                    </div>
+                    <p id="keyHint" class="text-xs text-gray-500 mt-2 text-right">Yêu cầu: 16 ký tự Hex</p>
+                </div>
+
+                <!-- 3. Dữ liệu đầu vào -->
+                <div class="bg-white rounded-lg shadow-md p-5 border-t-4 border-green-500 flex flex-col h-80">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-gray-700 font-bold flex items-center">
+                            <i class="fas fa-file-alt mr-2 text-green-500"></i> 3. Dữ liệu vào
+                        </h2>
+                        <div class="space-x-1">
+                            <input type="file" id="fileInput" class="hidden" accept=".txt" onchange="readFile(this)">
+                            <button onclick="document.getElementById('fileInput').click()" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200">
+                                <i class="fas fa-upload"></i> Mở File
+                            </button>
+                            <button onclick="document.getElementById('inputText').value=''" class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200">
+                                <i class="fas fa-trash"></i> Xóa
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="inputText" class="flex-grow w-full border border-gray-300 rounded p-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none" 
+                        placeholder="Nhập văn bản cần mã hóa, hoặc chuỗi Base64 để giải mã..."></textarea>
+                </div>
+            </div>
+
+            <!-- CỘT PHẢI: KẾT QUẢ & THAO TÁC -->
+            <div class="lg:col-span-7 flex flex-col space-y-5">
+                
+                <!-- Nút Hành động -->
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="process('encrypt')" class="bg-blue-700 hover:bg-blue-800 text-white py-4 rounded-lg shadow-lg text-lg font-bold btn-hover flex items-center justify-center">
+                        <i class="fas fa-lock mr-2"></i> MÃ HÓA
+                    </button>
+                    <button onclick="process('decrypt')" class="bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg shadow-lg text-lg font-bold btn-hover flex items-center justify-center">
+                        <i class="fas fa-unlock mr-2"></i> GIẢI MÃ
+                    </button>
+                </div>
+
+                <!-- Khu vực Kết quả -->
+                <div class="bg-white rounded-lg shadow-md p-5 border-t-4 border-purple-600 flex-grow flex flex-col relative">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-gray-700 font-bold flex items-center">
+                            <i class="fas fa-poll-h mr-2 text-purple-600"></i> Kết quả xử lý
+                        </h2>
+                        <div class="space-x-2">
+                            <button onclick="copyToClipboard()" class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded transition">
+                                <i class="far fa-copy"></i> Copy
+                            </button>
+                            <button onclick="saveResultToFile()" class="text-sm bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1 rounded transition">
+                                <i class="fas fa-download"></i> Lưu File
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <textarea id="outputText" readonly class="flex-grow w-full bg-slate-50 border border-gray-200 rounded p-3 font-mono text-sm text-slate-700 resize-none focus:outline-none"
+                        placeholder="Kết quả sẽ hiển thị tại đây..."></textarea>
+
+                    <!-- Loading Spinner (Ẩn mặc định) -->
+                    <div id="loadingOverlay" class="hidden absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center z-10 rounded-lg">
+                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-800"></div>
+                    </div>
+                </div>
+
+                <!-- Console Log mô phỏng -->
+                <div class="bg-slate-900 rounded-lg p-3 h-32 overflow-y-auto font-mono text-xs shadow-inner">
+                    <div class="text-green-400 mb-1">> System initialized...</div>
+                    <div id="logArea"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-200 text-center py-3 text-sm text-slate-600">
+        &copy; 2025 Nhóm 5. Ứng dụng chạy trên trình duyệt (Client-side Secure).
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    // --- JAVASCRIPT LOGIC (SỬ DỤNG FETCH ĐỂ GỌI API PYTHON) ---
+<script>
+    const API_URL = "http://127.0.0.1:5000/process"; // Địa chỉ API Flask
+
+    // --- CẤU HÌNH & TIỆN ÍCH (Giữ nguyên) ---
+    function log(msg, type = 'info') {
+        const logArea = document.getElementById('logArea');
+        const time = new Date().toLocaleTimeString('vi-VN');
+        let color = 'text-slate-300';
+        if (type === 'success') color = 'text-green-400';
+        if (type === 'error') color = 'text-red-400';
+        if (type === 'warn') color = 'text-yellow-400';
+        
+        const line = `<div class="${color} mb-1"><span class="opacity-50">[${time}]</span> ${msg}</div>`;
+        logArea.innerHTML += line;
+        logArea.parentElement.scrollTop = logArea.parentElement.scrollHeight;
+    }
+
+    function getMode() {
+        return document.querySelector('input[name="mode"]:checked').value;
+    }
+
+    // Cập nhật gợi ý độ dài khóa
+    function updateKeyRequirement() {
+        const mode = getMode();
+        const hint = document.getElementById('keyHint');
+        // Số ký tự Hex (gấp đôi số byte)
+        const lengths = { 'Single': 16, 'Double': 32, 'Triple': 48 }; 
+        hint.textContent = `Yêu cầu: ${lengths[mode]} ký tự Hex (${lengths[mode]/2} Bytes)`;
+        log(`Đã chuyển sang chế độ: ${mode} DES`);
+    }
+
+    // Sinh khóa ngẫu nhiên (Hex) (Sử dụng API web ngẫu nhiên hoặc JS cơ bản)
+    function generateKey() {
+        const mode = getMode();
+        const bytes = { 'Single': 8, 'Double': 16, 'Triple': 24 };
+        const keyLength = bytes[mode] * 2; // Số ký tự hex
+        
+        let keyHex = '';
+        for (let i = 0; i < keyLength; i++) {
+            keyHex += Math.floor(Math.random() * 16).toString(16).toUpperCase();
+        }
+
+        document.getElementById('keyInput').value = keyHex;
+        log(`Đã sinh khóa mới (${mode}): ${keyHex.substring(0, 10)}...`, 'success');
+    }
+    
+    // --- XỬ LÝ CHÍNH (GỌI API) ---
+    async function process(action) {
+        const mode = getMode();
+        const keyHex = document.getElementById('keyInput').value.trim().toUpperCase();
+        const inputData = document.getElementById('inputText').value.trim();
+        const outputEl = document.getElementById('outputText');
+        const loading = document.getElementById('loadingOverlay');
+
+        // 1. Kiểm tra đầu vào
+        if (!inputData) {
+            alert("Vui lòng nhập dữ liệu đầu vào!");
+            return;
+        }
+
+        // 2. Kiểm tra độ dài khóa (Frontend kiểm tra trước)
+        const reqLen = { 'Single': 16, 'Double': 32, 'Triple': 48 };
+        const cleanKey = keyHex.replace(/\s/g, '');
+        if (cleanKey.length !== reqLen[mode]) {
+            log(`Lỗi: Độ dài khóa không đúng. Cần ${reqLen[mode]} ký tự.`, 'error');
+            alert(`Khóa không hợp lệ!\nChế độ ${mode} cần ${reqLen[mode]} ký tự Hex.\nVui lòng nhấn nút Xúc xắc để tạo khóa chuẩn.`);
+            return;
+        }
+
+        loading.classList.remove('hidden');
+        outputEl.value = ""; // Xóa kết quả cũ
+        
+        log(`Đang gọi API Python để ${action === 'encrypt' ? 'Mã hóa' : 'Giải mã'} (${mode})...`);
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    mode: mode,
+                    key: cleanKey,
+                    input: inputData,
+                    action: action
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                outputEl.value = data.result;
+                log(`${action === 'encrypt' ? 'Mã hóa' : 'Giải mã'} thành công!`, 'success');
+            } else {
+                // Xử lý lỗi từ Server
+                outputEl.value = `LỖI TỪ SERVER:\n${data.error}\nChi tiết: ${data.detail || 'Không có'}`;
+                log(`Lỗi từ Server: ${data.error}`, 'error');
+                alert(`Đã xảy ra lỗi!\nLỗi Server: ${data.error}`);
+            }
+
+        } catch (e) {
+            // Xử lý lỗi kết nối (ví dụ: Server chưa chạy)
+            outputEl.value = "LỖI KẾT NỐI: Không thể kết nối tới API Server Python (Kiểm tra app.py).";
+            log(`Lỗi kết nối: ${e.message}. Server Python đã chạy chưa?`, 'error');
+            alert("LỖI KẾT NỐI! Vui lòng đảm bảo Server Python (app.py) đang chạy trên http://127.0.0.1:5000.");
+        } finally {
+            loading.classList.add('hidden');
+        }
+    }
+
+    // --- FILE HANDLING & CLIPBOARD (Giữ nguyên) ---
+    function readFile(input) {
+        // ... (Giữ nguyên logic đọc file TXT)
+        const file = input.files[0];
+        if (!file) return;
+        if (file.type && !file.type.startsWith('text/')) {
+            alert("Chức năng 'Mở File' chỉ hỗ trợ file văn bản (.txt) cho giao diện web này.");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('inputText').value = e.target.result;
+            log(`Đã đọc file: ${file.name} (${e.target.result.length} chars)`);
+        };
+        reader.readAsText(file);
+    }
+
+    function saveResultToFile() {
+        const content = document.getElementById('outputText').value;
+        if (!content) { alert("Chưa có kết quả để lưu!"); return; }
+        downloadFile("ket_qua_des.txt", content);
+        log("Đã lưu kết quả ra file.");
+    }
+
+    function saveKeyToFile() {
+        const content = document.getElementById('keyInput').value;
+        if (!content) { alert("Chưa có khóa!"); return; }
+        downloadFile("khoa_des.txt", content);
+        log("Đã lưu khóa ra file.");
+    }
+
+    function downloadFile(filename, text) {
+        const element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        element.setAttribute('download', filename);
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+    }
+
+    function copyToClipboard() {
+        const copyText = document.getElementById("outputText");
+        copyText.select();
+        document.execCommand("copy");
+        log("Đã copy vào bộ nhớ tạm.", 'success');
+    }
+
+    // Khởi tạo
+    updateKeyRequirement();
+</script>
+</body>
+</html>
